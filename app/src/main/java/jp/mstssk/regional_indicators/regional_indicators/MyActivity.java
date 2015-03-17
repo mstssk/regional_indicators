@@ -1,52 +1,127 @@
 package jp.mstssk.regional_indicators.regional_indicators;
 
+
 import android.app.Activity;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import butterknife.ButterKnife;
+import butterknife.InjectView;
+import butterknife.OnClick;
+
+import static android.widget.LinearLayout.LayoutParams.MATCH_PARENT;
+import static android.widget.LinearLayout.LayoutParams.WRAP_CONTENT;
+
 
 public class MyActivity extends Activity {
+
+    public static final char REGIONAL_LOW_A = '\uDDE6';
+    public static final char REGIONAL_HIGH = '\uD83C';
+
+    @InjectView(R.id.count_button)
+    Button countButton;
+
+    @InjectView(R.id.linear_layout)
+    LinearLayout layout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my);
+        ButterKnife.inject(this);
 
-        TextView textView = (TextView) findViewById(R.id.text);
-
-        char regionalHigh = '\uD83C';
-        char regionalLowA = '\uDDE6';
-
-        StringBuilder sb = new StringBuilder();
-//        for (char i = 'a'; i <= 'z'; i++) {
-//            char ichar = (char) (regionalLowA + (i - 'a'));
-//            for (char j = 'a'; j <= 'z'; j++) {
-//                char jchar = (char) (regionalLowA + (j - 'a'));
-//                sb.append(i).append(j).append(" : ");
-//                sb.append(regionalHigh).append(ichar);
-//                sb.append(regionalHigh).append(jchar);
-//                sb.append('\n');
+//        TextView textView = (TextView) findViewById(R.id.text);
+//        StringBuilder sb = new StringBuilder();
+////        for (char i = 'a'; i <= 'z'; i++) {
+////            char ichar = (char) (regionalLowA + (i - 'a'));
+////            for (char j = 'a'; j <= 'z'; j++) {
+////                char jchar = (char) (regionalLowA + (j - 'a'));
+////                sb.append(i).append(j).append(" : ");
+////                sb.append(regionalHigh).append(ichar);
+////                sb.append(regionalHigh).append(jchar);
+////                sb.append('\n');
+////            }
+////        }
+//        int count = 0;
+//        String[] split = countryCodes.split(",");
+//        Toast.makeText(this, split.length + " countries.", Toast.LENGTH_LONG).show();
+//        for (String codes : split) {
+////            sb.append(codes).append(" : ");
+//            if(exclude(codes)) {
+//                continue;
 //            }
+//            count++;
+//            sb.append(toRegionalFlag(codes)).append(" ");
 //        }
-        int count = 0;
-        String[] split = countryCodes.split(",");
-        Toast.makeText(this, split.length + " countries.", Toast.LENGTH_LONG).show();
-        for (String codes : split) {
-//            sb.append(codes).append(" : ");
-            if(exclude(codes)) {
-                continue;
-            }
-            count++;
-            for (int i = 0; i < codes.length(); i++) {
-                char c = (char) (regionalLowA + (codes.toLowerCase().charAt(i) - 'a'));
-                sb.append(regionalHigh).append(c);
-            }
-            sb.append(" ");
-        }
-        Toast.makeText(this, count + " countries(Impl).", Toast.LENGTH_LONG).show();
+//        Toast.makeText(this, count + " countries(Impl).", Toast.LENGTH_LONG).show();
+//
+//        textView.setText(sb.toString());
 
-        textView.setText(sb.toString());
+        final List<String> countryCodesList = createCountryCodesList();
+        Toast.makeText(this, countryCodesList.size() + "", Toast.LENGTH_SHORT).show();
+        for (String codes : countryCodesList) {
+            final LayoutParams layoutParams = new LayoutParams(WRAP_CONTENT, MATCH_PARENT);
+            layout.addView(buildTestView(toRegionalFlag(codes)), layoutParams);
+        }
+    }
+
+    @OnClick(R.id.count_button)
+    void count() {
+        int count = 0;
+        for (int i = 0; i < layout.getChildCount(); i++) {
+            TextView view = (TextView) layout.getChildAt(i);
+            int width = view.getMeasuredWidth();
+            if (width < 100) {
+                count++;
+                Log.d("regional", "flag:" + toCountryCodes(view.getText()));
+            }
+        }
+        Toast.makeText(this, count + "", Toast.LENGTH_SHORT).show();
+    }
+
+    private List<String> createCountryCodesList() {
+        final List<String> list = new ArrayList<String>();
+        for (char first = 'a'; first <= 'z'; first++) {
+            for (char second = 'a'; second <= 'z'; second++) {
+                list.add(String.valueOf(new char[]{first, second}));
+            }
+        }
+        return list;
+    }
+
+    private TextView buildTestView(String regionalFlagChars) {
+        TextView textView = new TextView(this);
+        textView.setText(regionalFlagChars);
+        return textView;
+    }
+
+    private String toRegionalFlag(String codes) {
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < codes.length(); i++) {
+            char c = (char) (REGIONAL_LOW_A + (codes.toLowerCase().charAt(i) - 'a'));
+            sb.append(REGIONAL_HIGH).append(c);
+        }
+        return sb.toString();
+    }
+
+    private String toCountryCodes(CharSequence regionalFlagChars) {
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < regionalFlagChars.length(); i++) {
+            if (regionalFlagChars.charAt(i) == REGIONAL_HIGH) {
+                continue; // HIGHサロゲートは無視
+            }
+            char c = (char) (regionalFlagChars.charAt(i) - REGIONAL_LOW_A + 'a');
+            sb.append(c);
+        }
+        return sb.toString();
     }
 
     private static String countryCodes = "IS,IE,AZ,AF,US,VI,AS,AE,DZ,AR,AW,AL,AM,AI,AO,AG,AD,YE," +
